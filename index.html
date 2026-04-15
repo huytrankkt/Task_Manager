@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Eisenhower Task Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --surface: #fff;
+  --text: #1a2332;
+  --text2: #5a6a7e;
+  --text3: #8896ab;
+  --text4: #b0bcc9;
+  --border: #e5e7eb;
+  --border2: #f1f5f9;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --orange: #c2410c;
+  --purple: #6366f1;
+  --gray: #6b7280;
+  --dark: #1a2332;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
+  --font: 'Outfit', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --sidebar-w: 230px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; -webkit-tap-highlight-color: transparent; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+button { font-family: var(--font); cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: var(--font); }
+
+/* ── LAYOUT ── */
+.app { display: flex; height: 100vh; height: 100dvh; }
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 12px rgba(0,0,0,0.03); z-index: 20; transition: transform 0.3s ease; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.topbar { padding: 16px 24px 0; flex-shrink: 0; }
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 24px 100px; -webkit-overflow-scrolling: touch; }
+
+/* ── BRAND ── */
+.brand { display: flex; align-items: center; gap: 12px; padding: 20px 18px 16px; }
+.brand-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg,#1a2332,#334155); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; }
+.brand-name { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+.brand-sub { font-size: 10px; color: var(--text3); font-weight: 500; }
+
+/* ── NAV ── */
+.nav-group { padding: 4px 10px; }
+.nav-label { font-size: 10px; font-weight: 700; color: var(--text4); letter-spacing: 1.2px; padding: 10px 8px 4px; }
+.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text2); text-align: left; transition: all 0.15s; position: relative; }
+.nav-btn:hover { background: var(--bg); }
+.nav-btn.active { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: inset 3px 0 0 var(--dark); }
+.nav-icon { font-size: 16px; width: 22px; text-align: center; }
+.nav-badge { background: var(--red); color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 10px; font-weight: 700; margin-left: auto; }
+.side-footer { margin-top: auto; padding: 12px 14px; border-top: 1px solid var(--border2); }
+.q-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.q-mini-item { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #fafbfc; font-size: 14px; font-weight: 700; }
+
+/* ── MOBILE BOTTOM NAV ── */
+.bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); z-index: 50; padding: 6px 0 env(safe-area-inset-bottom, 8px); box-shadow: 0 -2px 12px rgba(0,0,0,0.06); }
+.bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+.bnav-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 8px; font-size: 10px; color: var(--text3); font-weight: 500; position: relative; transition: color 0.15s; min-width: 56px; }
+.bnav-btn.active { color: var(--text); font-weight: 700; }
+.bnav-btn .bnav-icon { font-size: 20px; }
+.bnav-btn .bnav-badge { position: absolute; top: 2px; right: 6px; background: var(--red); color: #fff; font-size: 9px; font-weight: 700; border-radius: 8px; padding: 0 5px; min-width: 16px; text-align: center; }
+
+/* ── QUICK BAR ── */
+.quick-bar { display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 16px; }
+.quick-bar .plus { font-size: 20px; font-weight: 800; color: var(--blue); width: 28px; text-align: center; flex-shrink: 0; }
+.quick-bar input { flex: 1; border: none; outline: none; font-size: 13px; background: none; color: var(--text); min-width: 0; }
+.quick-hint { font-size: 10px; color: var(--text4); white-space: nowrap; }
+
+/* ── VIEW ── */
+.view { display: none; }
+.view.active { display: block; animation: fadeIn 0.25s ease; }
+.view-head { display: flex; justify-content: space-between; align-items: center; margin: 16px 0; gap: 12px; flex-wrap: wrap; }
+.view-title { font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+.view-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* ── BUTTONS ── */
+.btn-primary { background: var(--dark); color: #fff; padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; transition: all 0.15s; white-space: nowrap; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-ghost { border: 1px solid var(--border); background: var(--surface); color: var(--text2); padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; }
+.chip { border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; font-size: 12px; background: #fafbfc; color: var(--text2); font-weight: 500; transition: all 0.15s; }
+.chip:hover { background: var(--border); }
+.chip.selected { background: var(--dark); color: #fff; border-color: var(--dark); }
+.toggle-chip { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+
+/* ── MATRIX ── */
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.quadrant { border-radius: var(--radius); padding: 16px; min-height: 200px; display: flex; flex-direction: column; box-shadow: var(--shadow); }
+.q-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.q-head .q-label { font-weight: 700; font-size: 12px; letter-spacing: 0.5px; }
+.q-head .q-sub { font-size: 10px; color: var(--text3); }
+.q-badge { color: #fff; border-radius: 10px; padding: 2px 9px; font-size: 11px; font-weight: 700; margin-left: auto; }
+.q-body { flex: 1; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+.q-empty { font-size: 12px; color: #94a3b8; text-align: center; padding: 30px; font-style: italic; }
+
+/* ── TASK CARD ── */
+.task-card { background: #fff; border-radius: 10px; padding: 10px 12px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: all 0.15s; cursor: pointer; }
+.task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.task-card.overdue { background: #fef2f2; }
+.task-card.escalated { animation: pulseRing 2s infinite; }
+.task-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.task-meta { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; align-items: center; }
+.task-actions { position: absolute; top: 6px; right: 6px; display: none; gap: 2px; background: #fff; border-radius: 8px; padding: 2px 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.12); z-index: 5; }
+.task-card:hover .task-actions { display: flex; }
+.act-btn { font-size: 14px; padding: 3px 6px; border-radius: 4px; color: var(--text2); line-height: 1; }
+.act-btn:hover { background: var(--bg); }
+.act-btn.danger { color: var(--red); }
+
+/* Sub progress */
+.sub-progress { margin-top: 4px; height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+.sub-progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+
+/* Subtask list */
+.subtask-list { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5e7eb; animation: fadeIn 0.2s ease; }
+.subtask-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; cursor: pointer; }
+.mini-check { width: 16px; height: 16px; border-radius: 4px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 9px; color: #fff; transition: all 0.15s; }
+.mini-check.done { background: var(--green); border-color: var(--green); }
+
+/* ── BADGES ── */
+.badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.badge-red { background: #fee2e2; color: #dc2626; }
+.badge-yellow { background: #fef3c7; color: #d97706; }
+.badge-orange { background: #ffedd5; color: #c2410c; }
+.badge-green { background: #dcfce7; color: #16a34a; }
+.tag { font-size: 10px; color: var(--purple); background: #eef2ff; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+
+/* ── SECTION (Today) ── */
+.section { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.section-title { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+.section-count { font-size: 12px; color: var(--text3); font-weight: 600; }
+.today-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid #f8f9fa; transition: opacity 0.2s; }
+.today-row.done { opacity: 0.5; }
+.check-box { width: 26px; height: 26px; border-radius: 7px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; font-size: 13px; font-weight: 700; color: #fff; }
+.check-box.checked { background: var(--green); border-color: var(--green); }
+.progress-wrap { height: 8px; background: #e5e7eb; border-radius: 6px; overflow: hidden; margin-bottom: 16px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#22c55e,#16a34a); border-radius: 6px; transition: width 0.4s ease; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 700; }
+.inline-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; outline: none; background: #fafbfc; }
+
+/* ── HISTORY ── */
+.history-card { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 14px 18px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 6px; transition: all 0.15s; }
+.history-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.history-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.history-body { background: var(--surface); border-radius: 0 0 12px 12px; padding: 12px 18px 16px; border: 1px solid var(--border); border-top: none; margin-top: -10px; margin-bottom: 8px; animation: fadeIn 0.25s ease; }
+.hist-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.hist-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.hist-mini-progress { width: 80px; height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.hist-mini-fill { height: 100%; border-radius: 4px; }
+
+/* ── POMODORO ── */
+.pomo-wrap { max-width: 480px; margin: 0 auto; text-align: center; }
+.timer-circle { position: relative; width: 220px; height: 220px; margin: 24px auto 0; }
+.timer-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.timer-time { font-size: 44px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.timer-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+.timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+
+/* ── STATS ── */
+.kpi-row { display: flex; gap: 12px; margin: 16px 0 20px; flex-wrap: wrap; }
+.kpi-card { flex: 1 1 100px; background: var(--surface); border-radius: 12px; padding: 16px 14px; text-align: center; box-shadow: var(--shadow); }
+.kpi-val { font-size: 22px; font-weight: 800; }
+.kpi-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.card { background: var(--surface); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+.bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 130px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar-outer { width: 100%; border-radius: 5px; position: relative; min-height: 4px; }
+.bar-inner { position: absolute; bottom: 0; width: 100%; border-radius: 5px; }
+.tag-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.tag-bar { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+.tag-fill { height: 100%; background: var(--blue); border-radius: 4px; }
+
+/* ── SETTINGS ── */
+.settings-wrap { max-width: 520px; }
+.field-label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text3); font-weight: 500; }
+.num-input { width: 72px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+.text-input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: #fafbfc; color: var(--text); }
+.text-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+textarea.text-input { resize: vertical; height: 56px; }
+.tag-manage { display: inline-flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--text2); font-weight: 500; margin: 0 4px 4px 0; }
+.tag-manage .tag-x { font-size: 14px; color: #94a3b8; cursor: pointer; line-height: 1; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); animation: fadeIn 0.15s ease; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 16px; padding: 24px; width: 92%; max-width: 460px; max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.modal-title { font-size: 18px; font-weight: 700; }
+.modal-close { font-size: 22px; color: #94a3b8; padding: 4px; }
+.f-group { margin-bottom: 14px; }
+.f-label { display: block; font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 5px; letter-spacing: 0.3px; text-transform: uppercase; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border2); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulseRing { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
+
+/* ── RESPONSIVE: TABLET (≤1024px) ── */
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar { display: none; }
+  .bottom-nav { display: block; }
+  .content { padding: 0 16px 90px; }
+  .topbar { padding: 12px 16px 0; }
+  .matrix-grid { gap: 10px; }
+  .quadrant { padding: 12px; min-height: 160px; }
+  .view-title { font-size: 19px; }
+  .quick-hint { display: none; }
+}
+
+/* ── RESPONSIVE: MOBILE (≤640px) ── */
+@media (max-width: 640px) {
+  .matrix-grid { grid-template-columns: 1fr; gap: 10px; }
+  .quadrant { min-height: auto; }
+  .kpi-row { gap: 8px; }
+  .kpi-card { flex: 1 1 80px; padding: 12px 8px; }
+  .kpi-val { font-size: 18px; }
+  .view-head { flex-direction: column; align-items: flex-start; }
+  .timer-circle { width: 180px; height: 180px; }
+  .timer-circle svg { width: 180px; height: 180px; }
+  .timer-time { font-size: 36px; }
+  .modal { padding: 18px; width: 96%; }
+  .hist-mini-progress { width: 50px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- SIDEBAR (desktop) -->
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar" id="topbar"></div>
+    <div class="content" id="content"></div>
+  </main>
+
+  <!-- BOTTOM NAV (tablet/mobile) -->
+  <div class="bottom-nav" id="bottomNav"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent" onclick="event.stopPropagation()"></div>
+</div>
+
+<script>
+// ============================================================
+// UTILS
+// ============================================================
+const uid = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36);
+const todayStr = () => new Date().toISOString().slice(0,10);
+const daysBetween = (a,b) => Math.ceil((new Date(b)-new Date(a))/86400000);
+const fmtDate = d => { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}); };
+const fmtFull = d => { if(!d) return ''; const dt=new Date(d+'T00:00:00'); const days=['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7']; return `${days[dt.getDay()]}, ${dt.toLocaleDateString('vi-VN',{day:'2-digit',month:'long',year:'numeric'})}`; };
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const getQ = t => t.isImportant ? (t.isUrgent?'q1':'q2') : (t.isUrgent?'q3':'q4');
+
+const Q = {
+  q1:{label:'LÀM NGAY',sub:'Quan trọng · Gấp',icon:'🔥',accent:'#ef4444',bg:'linear-gradient(135deg,#fef2f2,#fee2e2)'},
+  q2:{label:'LÊN KẾ HOẠCH',sub:'Quan trọng · Không gấp',icon:'🎯',accent:'#3b82f6',bg:'linear-gradient(135deg,#eff6ff,#dbeafe)'},
+  q3:{label:'ỦY THÁC',sub:'Không quan trọng · Gấp',icon:'⚡',accent:'#f59e0b',bg:'linear-gradient(135deg,#fffbeb,#fef3c7)'},
+  q4:{label:'LOẠI BỎ',sub:'Không quan trọng · Không gấp',icon:'📋',accent:'#6b7280',bg:'linear-gradient(135deg,#f9fafb,#f3f4f6)'},
+};
+
+const DEFAULT_TAGS = ['Công việc','Cá nhân','Học tập','Sức khỏe','Tài chính'];
+const STORE = 'eisenhower_v2';
+
+// ============================================================
+// STATE
+// ============================================================
+let state = { tasks:[], dailyLogs:{}, tags:[...DEFAULT_TAGS], pomodoroSettings:{work:25,break:5} };
+let currentTab = 'matrix';
+let expandedTask = null;
+let openHistory = null;
+// Pomodoro state
+let pomoSel = null, pomoLeft = 0, pomoRun = false, pomoBrk = false, pomoCount = 0, pomoInterval = null;
+
+function loadState(){
+  try { const r=localStorage.getItem(STORE); if(r) state=JSON.parse(r); } catch(e){}
+  // ensure structure
+  if(!state.tags) state.tags=[...DEFAULT_TAGS];
+  if(!state.pomodoroSettings) state.pomodoroSettings={work:25,break:5};
+  if(!state.dailyLogs) state.dailyLogs={};
+  purgeOld();
+}
+function saveState(){ try { localStorage.setItem(STORE,JSON.stringify(state)); } catch(e){} }
+function purgeOld(){
+  const cut = new Date(); cut.setDate(cut.getDate()-7);
+  const cutStr = cut.toISOString().slice(0,10);
+  Object.keys(state.dailyLogs).forEach(k=>{ if(k<cutStr) delete state.dailyLogs[k]; });
+}
+
+// ============================================================
+// DAILY ROLLOVER
+// ============================================================
+function rollover(){
+  const td = todayStr();
+  if(!state.dailyLogs[td]) state.dailyLogs[td]={taskIds:[],completedIds:[],carryOver:[],dailyTasks:[]};
+  const log = state.dailyLogs[td];
+  if(!log.dailyTasks) log.dailyTasks=[];
+  if(!log.carryOver) log.carryOver=[];
+
+  const dates = Object.keys(state.dailyLogs).filter(d=>d<td).sort();
+  const last = dates[dates.length-1];
+  if(last && state.dailyLogs[last]){
+    const prev = state.dailyLogs[last];
+    const incomplete = (prev.taskIds||[]).filter(id=>!(prev.completedIds||[]).includes(id));
+    incomplete.forEach(id=>{
+      const t = state.tasks.find(x=>x.id===id);
+      if(t && t.status==='active'){
+        if(!log.taskIds.includes(id)) log.taskIds.push(id);
+        if(!log.carryOver.includes(id)) log.carryOver.push(id);
+      }
+    });
+  }
+  // Auto-add deadline=today
+  state.tasks.forEach(t=>{
+    if(t.status==='active' && t.deadline===td && !log.taskIds.includes(t.id)) log.taskIds.push(t.id);
+  });
+  saveState();
+}
+
+// ============================================================
+// COMPUTED
+// ============================================================
+function activeTasks(){ return state.tasks.filter(t=>t.status==='active'); }
+function matrixTasks(){ return activeTasks().filter(t=>t.showOnMatrix); }
+function escalatedIds(){
+  const td=todayStr(); const s=new Set();
+  matrixTasks().forEach(t=>{ if(t.deadline && getQ(t)==='q2'){ const d=daysBetween(td,t.deadline); if(d>=0&&d<=2) s.add(t.id); }});
+  return s;
+}
+function overdueIds(){
+  const td=todayStr(); return new Set(activeTasks().filter(t=>t.deadline&&t.deadline<td).map(t=>t.id));
+}
+function todayLog(){
+  const td=todayStr();
+  return state.dailyLogs[td] || {taskIds:[],completedIds:[],carryOver:[],dailyTasks:[]};
+}
+function todayPending(){
+  const l=todayLog();
+  return l.taskIds.filter(id=>!l.completedIds.includes(id)).length + (l.dailyTasks||[]).filter(t=>!t.done).length;
+}
+
+// ============================================================
+// RENDER ENGINE
+// ============================================================
+function render(){
+  renderSidebar();
+  renderBottomNav();
+  renderTopbar();
+  renderContent();
+  saveState();
+}
+
+function renderSidebar(){
+  const TABS = [
+    {id:'matrix',label:'Ma trận',icon:'⊞',group:'WORKSPACE'},
+    {id:'today',label:'Hôm nay',icon:'☀',group:'WORKSPACE'},
+    {id:'history',label:'Lịch sử',icon:'📅',group:'WORKSPACE'},
+    {id:'pomodoro',label:'Pomodoro',icon:'🍅',group:'TOOLS'},
+    {id:'stats',label:'Thống kê',icon:'📊',group:'TOOLS'},
+    {id:'settings',label:'Cài đặt',icon:'⚙',group:'TOOLS'},
+  ];
+  const mt = matrixTasks();
+  const pending = todayPending();
+  let html = `<div class="brand"><div class="brand-icon">E</div><div><div class="brand-name">Eisenhower</div><div class="brand-sub">Task Manager</div></div></div>`;
+
+  let lastGroup = '';
+  TABS.forEach(t=>{
+    if(t.group!==lastGroup){ html+=`<div class="nav-group"><div class="nav-label">${t.group}</div>`; lastGroup=t.group; }
+    const badge = t.id==='today'&&pending>0 ? `<span class="nav-badge">${pending}</span>` : '';
+    html+=`<button class="nav-btn ${currentTab===t.id?'active':''}" onclick="switchTab('${t.id}')"><span class="nav-icon">${t.icon}</span><span style="flex:1">${t.label}</span>${badge}</button>`;
+  });
+  html+=`</div>`;
+
+  // Mini quadrants
+  html+=`<div class="side-footer"><div class="q-mini">`;
+  ['q1','q2','q3','q4'].forEach(qk=>{
+    const c = mt.filter(t=>getQ(t)===qk).length;
+    html+=`<div class="q-mini-item" style="border-left:3px solid ${Q[qk].accent}"><span style="font-size:10px">${Q[qk].icon}</span><span style="color:${Q[qk].accent}">${c}</span></div>`;
+  });
+  html+=`</div></div>`;
+
+  document.getElementById('sidebar').innerHTML=html;
+}
+
+function renderBottomNav(){
+  const TABS=[
+    {id:'matrix',icon:'⊞',label:'Ma trận'},
+    {id:'today',icon:'☀',label:'Hôm nay'},
+    {id:'history',icon:'📅',label:'Lịch sử'},
+    {id:'pomodoro',icon:'🍅',label:'Pomo'},
+    {id:'stats',icon:'📊',label:'Thống kê'},
+    {id:'settings',icon:'⚙',label:'Cài đặt'},
+  ];
+  const pending=todayPending();
+  let html='<div class="bottom-nav-inner">';
+  TABS.forEach(t=>{
+    const badge=t.id==='today'&&pending>0?`<span class="bnav-badge">${pending}</span>`:'';
+    html+=`<button class="bnav-btn ${currentTab===t.id?'active':''}" onclick="switchTab('${t.id}')"><span class="bnav-icon">${t.icon}</span>${badge}<span>${t.label}</span></button>`;
+  });
+  html+='</div>';
+  document.getElementById('bottomNav').innerHTML=html;
+}
+
+function renderTopbar(){
+  document.getElementById('topbar').innerHTML=`
+    <div class="quick-bar">
+      <div class="plus">+</div>
+      <input id="quickInput" placeholder="Thêm nhanh... (Enter → Ma trận | .task → Việc ngày | #tag)" onkeydown="handleQuick(event)">
+      <span class="quick-hint">Enter: Ma trận &nbsp;|&nbsp; .task: Việc ngày</span>
+    </div>`;
+}
+
+function renderContent(){
+  const el=document.getElementById('content');
+  el.innerHTML = `
+    <div class="view ${currentTab==='matrix'?'active':''}" id="v-matrix">${renderMatrix()}</div>
+    <div class="view ${currentTab==='today'?'active':''}" id="v-today">${renderToday()}</div>
+    <div class="view ${currentTab==='history'?'active':''}" id="v-history">${renderHistory()}</div>
+    <div class="view ${currentTab==='pomodoro'?'active':''}" id="v-pomodoro">${renderPomodoro()}</div>
+    <div class="view ${currentTab==='stats'?'active':''}" id="v-stats">${renderStats()}</div>
+    <div class="view ${currentTab==='settings'?'active':''}" id="v-settings">${renderSettings()}</div>
+  `;
+  if(currentTab==='pomodoro') startPomoTick();
+}
+
+// ============================================================
+// MATRIX
+// ============================================================
+function renderMatrix(){
+  const tasks=matrixTasks(), esc=escalatedIds(), over=overdueIds();
+  let html=`<div class="view-head"><div><h1 class="view-title">Ma trận Eisenhower</h1><p class="view-sub">Task chiến lược. Click để xem sub-tasks.</p></div><button class="btn-primary" onclick="openModal()">+ Thêm Task</button></div><div class="matrix-grid">`;
+
+  ['q1','q2','q3','q4'].forEach(qk=>{
+    const q=Q[qk], items=tasks.filter(t=>getQ(t)===qk);
+    html+=`<div class="quadrant" style="background:${q.bg};border-top:3px solid ${q.accent}">
+      <div class="q-head"><span style="font-size:18px">${q.icon}</span><div style="flex:1"><div class="q-label" style="color:${q.accent}">${q.label}</div><div class="q-sub">${q.sub}</div></div><span class="q-badge" style="background:${q.accent}">${items.length}</span></div>
+      <div class="q-body">`;
+    if(items.length===0) html+=`<div class="q-empty">Trống</div>`;
+    items.forEach(t=>{
+      const isOver=over.has(t.id), isEsc=esc.has(t.id), isExp=expandedTask===t.id;
+      const subDone=t.subtasks.filter(s=>s.done).length, subTotal=t.subtasks.length;
+      const pct=subTotal>0?Math.round(subDone/subTotal*100):0;
+      html+=`<div class="task-card ${isOver?'overdue':''} ${isEsc?'escalated':''}" style="border-left:3px solid ${isOver?'#ef4444':isEsc?'#f59e0b':q.accent}" onclick="toggleExpand('${t.id}')">
+        <div class="task-actions">
+          <button class="act-btn" onclick="event.stopPropagation();completeTask('${t.id}')" title="Done">✓</button>
+          <button class="act-btn" onclick="event.stopPropagation();openModal('${t.id}')" title="Sửa">✎</button>
+          <button class="act-btn" onclick="event.stopPropagation();addToToday('${t.id}')" title="→ Hôm nay">☀</button>
+          <button class="act-btn danger" onclick="event.stopPropagation();deleteTask('${t.id}')" title="Xóa">✕</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="task-title">${esc(t.title)}</span>
+          ${isOver?'<span class="badge badge-red">Trễ hạn</span>':''}
+          ${isEsc&&!isOver?'<span class="badge badge-yellow">Sắp gấp</span>':''}
+        </div>
+        <div class="task-meta">
+          ${t.deadline?`<span style="font-size:10px;color:${isOver?'#ef4444':'#8896ab'}">📅 ${fmtDate(t.deadline)}</span>`:''}
+          ${t.tags.map(tg=>`<span class="tag">#${esc(tg)}</span>`).join('')}
+          ${t.pomodoroCount>0?`<span style="font-size:10px;color:#ef4444">🍅${t.pomodoroCount}</span>`:''}
+          ${subTotal>0?`<span style="font-size:10px;color:${pct===100?'#22c55e':'#8896ab'};font-weight:600">✓ ${subDone}/${subTotal}</span>`:''}
+        </div>
+        ${subTotal>0?`<div class="sub-progress"><div class="sub-progress-fill" style="width:${pct}%;background:${pct===100?'#22c55e':q.accent}"></div></div>`:''}
+        ${isExp&&subTotal>0?renderSubtasks(t):''}
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function renderSubtasks(t){
+  let h='<div class="subtask-list">';
+  t.subtasks.forEach(s=>{
+    h+=`<div class="subtask-row" onclick="event.stopPropagation();toggleSub('${t.id}','${s.id}')">
+      <div class="mini-check ${s.done?'done':''}">${s.done?'✓':''}</div>
+      <span style="font-size:12px;color:${s.done?'#94a3b8':'#475569'};text-decoration:${s.done?'line-through':'none'}">${esc(s.title)}</span>
+    </div>`;
+  });
+  h+='</div>';
+  return h;
+}
+
+// ============================================================
+// TODAY
+// ============================================================
+function renderToday(){
+  const td=todayStr(), log=todayLog(), over=overdueIds(), esc_=escalatedIds();
+  const mItems=log.taskIds.map(id=>state.tasks.find(t=>t.id===id)).filter(Boolean);
+  const dItems=log.dailyTasks||[];
+  const doneM=log.completedIds.length, totalM=mItems.length;
+  const doneD=dItems.filter(t=>t.done).length, totalD=dItems.length;
+  const total=totalM+totalD, done=doneM+doneD;
+  const pct=total>0?Math.round(done/total*100):0;
+  const notSched=activeTasks().filter(t=>t.showOnMatrix&&!log.taskIds.includes(t.id));
+
+  let html=`<div class="view-head"><div><h1 class="view-title">☀ ${fmtFull(td)}</h1><p class="view-sub">${done}/${total} hoàn thành</p></div></div>`;
+  html+=`<div class="progress-wrap"><div class="progress-fill" style="width:${pct}%">${pct>=15?pct+'%':''}</div></div>`;
+
+  // Matrix section
+  html+=`<div class="section"><div class="section-head"><span style="font-size:16px">🎯</span><span class="section-title">Task chiến lược</span><span class="section-count">${doneM}/${totalM}</span></div>`;
+  mItems.forEach(t=>{
+    const isDone=log.completedIds.includes(t.id), isCarry=(log.carryOver||[]).includes(t.id), isExp=expandedTask===t.id;
+    const subTotal=t.subtasks?.length||0;
+    html+=`<div class="today-row ${isDone?'done':''}">
+      <button class="check-box ${isDone?'checked':''}" onclick="toggleMatrixDone('${t.id}')">${isDone?'✓':''}</button>
+      <div style="flex:1;${subTotal>0?'cursor:pointer':''}" onclick="${subTotal>0?`toggleExpand('${t.id}')`:''}">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:600;text-decoration:${isDone?'line-through':'none'}">${esc(t.title)}</span>
+          ${isCarry?'<span class="badge badge-orange">Tồn đọng</span>':''}
+          ${over.has(t.id)?'<span class="badge badge-red">Trễ</span>':''}
+          <span style="font-size:10px;color:${Q[getQ(t)].accent};font-weight:700">${Q[getQ(t)].icon}</span>
+        </div>
+        ${subTotal>0?`<div style="font-size:10px;color:#8896ab;margin-top:2px">${t.subtasks.filter(s=>s.done).length}/${subTotal} sub-tasks ▾</div>`:''}
+        ${isExp&&subTotal>0?`<div style="margin-top:6px;padding-left:4px;border-left:2px solid #e5e7eb">${t.subtasks.map(s=>`
+          <div class="subtask-row" onclick="event.stopPropagation();toggleSub('${t.id}','${s.id}')">
+            <div class="mini-check ${s.done?'done':''}">${s.done?'✓':''}</div>
+            <span style="font-size:11px;color:${s.done?'#94a3b8':'#475569'};text-decoration:${s.done?'line-through':'none'}">${esc(s.title)}</span>
+          </div>`).join('')}</div>`:''}
+      </div>
+      <button class="act-btn" onclick="openModal('${t.id}')">✎</button>
+    </div>`;
+  });
+  if(mItems.length===0) html+=`<div style="font-size:12px;color:#94a3b8;padding:12px;font-style:italic">Chưa có task chiến lược cho hôm nay</div>`;
+  html+=`</div>`;
+
+  // Daily section
+  html+=`<div class="section"><div class="section-head"><span style="font-size:16px">📝</span><span class="section-title">Việc trong ngày</span><span class="section-count">${doneD}/${totalD}</span></div>`;
+  dItems.forEach(t=>{
+    html+=`<div class="today-row ${t.done?'done':''}">
+      <button class="check-box ${t.done?'checked':''}" onclick="toggleDailyTask('${td}','${t.id}')">${t.done?'✓':''}</button>
+      <span style="flex:1;font-size:13px;text-decoration:${t.done?'line-through':'none'}">${esc(t.title)}</span>
+    </div>`;
+  });
+  html+=`<div style="display:flex;gap:8px;margin-top:6px"><input class="inline-input" id="dailyInput" placeholder="+ Thêm việc trong ngày..." onkeydown="handleDailyAdd(event)"></div></div>`;
+
+  // Unscheduled
+  if(notSched.length>0){
+    html+=`<div class="section"><div class="section-head"><span style="font-size:16px">📌</span><span class="section-title">Chưa lên lịch</span></div><div style="display:flex;flex-wrap:wrap;gap:6px">`;
+    notSched.slice(0,12).forEach(t=>{ html+=`<button class="chip" onclick="addToToday('${t.id}')">+ ${esc(t.title)}</button>`; });
+    html+=`</div></div>`;
+  }
+  return html;
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+function renderHistory(){
+  const td=todayStr();
+  const days=[];
+  for(let i=1;i<=7;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    if(state.dailyLogs[ds]) days.push(ds);
+  }
+
+  let html=`<div class="view-head"><div><h1 class="view-title">📅 Lịch sử 7 ngày</h1><p class="view-sub">Review công việc đã thực hiện</p></div></div>`;
+
+  if(days.length===0){
+    html+=`<div style="text-align:center;padding:60px 20px;color:#8896ab"><div style="font-size:48px">📅</div><p style="margin-top:12px">Chưa có dữ liệu lịch sử</p></div>`;
+    return html;
+  }
+
+  days.forEach(date=>{
+    const log=state.dailyLogs[date];
+    const isOpen=openHistory===date;
+    const mItems=(log.taskIds||[]).map(id=>state.tasks.find(t=>t.id===id)).filter(Boolean);
+    const doneM=(log.completedIds||[]);
+    const dItems=log.dailyTasks||[];
+    const totalM=mItems.length, dm=doneM.length;
+    const totalD=dItems.length, dd=dItems.filter(t=>t.done).length;
+    const total=totalM+totalD, done=dm+dd;
+    const pct=total>0?Math.round(done/total*100):0;
+    const dotColor=pct===100?'#22c55e':pct>0?'#3b82f6':'#e5e7eb';
+
+    html+=`<button class="history-card" onclick="toggleHistory('${date}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="history-dot" style="background:${dotColor}"></div>
+        <div><div style="font-weight:700;font-size:14px">${fmtFull(date)}</div><div style="font-size:11px;color:#8896ab;margin-top:1px">${done}/${total} hoàn thành</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="hist-mini-progress"><div class="hist-mini-fill" style="width:${pct}%;background:${pct===100?'#22c55e':'#3b82f6'}"></div></div>
+        <span style="font-size:12px;font-weight:700;color:${pct===100?'#22c55e':'#3b82f6'}">${pct}%</span>
+        <span style="font-size:12px;color:#94a3b8;transform:rotate(${isOpen?'180':'0'}deg);transition:transform 0.2s">▼</span>
+      </div>
+    </button>`;
+
+    if(isOpen){
+      html+=`<div class="history-body">`;
+      if(totalM>0){
+        html+=`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#8896ab;margin-bottom:6px;letter-spacing:0.5px">🎯 TASK CHIẾN LƯỢC</div>`;
+        mItems.forEach(t=>{
+          const isDone=doneM.includes(t.id);
+          html+=`<div class="hist-item" style="opacity:${isDone?0.6:1}"><div class="hist-dot" style="background:${isDone?'#22c55e':'#e5e7eb'}"></div><span style="font-size:12px;text-decoration:${isDone?'line-through':'none'};flex:1">${esc(t.title)}</span><span style="font-size:10px;color:${Q[getQ(t)]?.accent||'#8896ab'};font-weight:700">${Q[getQ(t)]?.icon||''}</span></div>`;
+        });
+        html+=`</div>`;
+      }
+      if(totalD>0){
+        html+=`<div><div style="font-size:11px;font-weight:700;color:#8896ab;margin-bottom:6px;letter-spacing:0.5px">📝 VIỆC TRONG NGÀY</div>`;
+        dItems.forEach(t=>{
+          html+=`<div class="hist-item" style="opacity:${t.done?0.6:1}"><div class="hist-dot" style="background:${t.done?'#22c55e':'#ef4444'}"></div><span style="font-size:12px;text-decoration:${t.done?'line-through':'none'};flex:1">${esc(t.title)}</span>${!t.done?'<span class="badge badge-red" style="font-size:9px">Chưa xong</span>':''}</div>`;
+        });
+        html+=`</div>`;
+      }
+      if(totalM===0&&totalD===0) html+=`<div style="font-size:12px;color:#94a3b8;padding:12px">Không có hoạt động</div>`;
+      html+=`</div>`;
+    }
+  });
+  return html;
+}
+
+// ============================================================
+// POMODORO
+// ============================================================
+function renderPomodoro(){
+  const tasks=matrixTasks();
+  const m=Math.floor(pomoLeft/60), s=pomoLeft%60;
+  const total=pomoBrk?state.pomodoroSettings.break*60:state.pomodoroSettings.work*60;
+  const pct=total>0?((total-pomoLeft)/total)*100:0;
+  const R=90, C=2*Math.PI*R;
+  const color=pomoBrk?'#22c55e':'#ef4444';
+
+  let html=`<div class="pomo-wrap"><h1 class="view-title">🍅 Pomodoro</h1>
+    <div class="timer-circle">
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <circle cx="110" cy="110" r="${R}" fill="none" stroke="#1e293b" stroke-width="6" opacity="0.08"/>
+        <circle cx="110" cy="110" r="${R}" fill="none" stroke="${color}" stroke-width="6"
+          stroke-dasharray="${C}" stroke-dashoffset="${C-(C*pct/100)}"
+          stroke-linecap="round" transform="rotate(-90 110 110)" style="transition:stroke-dashoffset 1s linear"/>
+      </svg>
+      <div class="timer-text">
+        <div class="timer-time">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div>
+        <div class="timer-label" style="color:${color}">${pomoBrk?'NGHỈ NGƠI':'LÀM VIỆC'}</div>
+      </div>
+    </div>
+    <div class="timer-controls">
+      <button class="btn-primary" style="background:${pomoRun?'#f59e0b':'#22c55e'};min-width:110px" onclick="togglePomo()">${pomoRun?'⏸ Tạm dừng':'▶ Bắt đầu'}</button>
+      <button class="btn-ghost" onclick="resetPomo()">↺ Reset</button>
+    </div>
+    <div style="font-size:13px;color:#8896ab;margin-top:12px">Phiên hôm nay: <b>${pomoCount}</b> 🍅</div>
+    <div style="margin-top:28px;text-align:left"><div style="font-size:12px;font-weight:700;color:#8896ab;margin-bottom:8px">CHỌN TASK ĐỂ FOCUS</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">`;
+  tasks.forEach(t=>{
+    html+=`<button class="chip ${pomoSel===t.id?'selected':''}" onclick="pomoSel='${t.id}';resetPomo();render()">${esc(t.title)} ${t.pomodoroCount>0?'🍅'+t.pomodoroCount:''}</button>`;
+  });
+  html+=`</div></div></div>`;
+  return html;
+}
+
+function startPomoTick(){
+  clearInterval(pomoInterval);
+  if(!pomoRun) return;
+  pomoInterval=setInterval(()=>{
+    if(pomoLeft>0){ pomoLeft--; updatePomoDisplay(); }
+    else {
+      clearInterval(pomoInterval);
+      pomoRun=false;
+      if(!pomoBrk && pomoSel){
+        const t=state.tasks.find(x=>x.id===pomoSel);
+        if(t) t.pomodoroCount=(t.pomodoroCount||0)+1;
+        pomoCount++;
+      }
+      pomoBrk=!pomoBrk;
+      pomoLeft=pomoBrk?state.pomodoroSettings.break*60:state.pomodoroSettings.work*60;
+      saveState(); render();
+    }
+  },1000);
+}
+
+function updatePomoDisplay(){
+  const m=Math.floor(pomoLeft/60), s=pomoLeft%60;
+  const el=document.querySelector('.timer-time');
+  if(el) el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const total=pomoBrk?state.pomodoroSettings.break*60:state.pomodoroSettings.work*60;
+  const pct=total>0?((total-pomoLeft)/total)*100:0;
+  const R=90, C=2*Math.PI*R;
+  const circle=document.querySelectorAll('.timer-circle circle')[1];
+  if(circle) circle.setAttribute('stroke-dashoffset', C-(C*pct/100));
+}
+
+function togglePomo(){ pomoRun=!pomoRun; if(pomoRun&&pomoLeft===0){ pomoLeft=state.pomodoroSettings.work*60; pomoBrk=false; } render(); if(pomoRun) startPomoTick(); }
+function resetPomo(){ clearInterval(pomoInterval); pomoRun=false; pomoBrk=false; pomoLeft=state.pomodoroSettings.work*60; render(); }
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats(){
+  const all=state.tasks, done=all.filter(t=>t.status==='done'), active=all.filter(t=>t.status==='active');
+  const last7=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().slice(0,10);});
+  const daily=last7.map(d=>{
+    const log=state.dailyLogs[d];
+    const mD=log?(log.completedIds||[]).length:0, mT=log?(log.taskIds||[]).length:0;
+    const dD=log?(log.dailyTasks||[]).filter(t=>t.done).length:0, dT=log?(log.dailyTasks||[]).length:0;
+    return {date:d,done:mD+dD,total:mT+dT};
+  });
+  const mx=Math.max(...daily.map(d=>d.total),1);
+
+  const tagMap={};
+  all.forEach(t=>(t.tags||[]).forEach(tag=>{
+    if(!tagMap[tag]) tagMap[tag]={total:0,done:0};
+    tagMap[tag].total++; if(t.status==='done') tagMap[tag].done++;
+  }));
+
+  const ct=done.filter(t=>t.completedAt&&t.createdAt).map(t=>daysBetween(t.createdAt.slice(0,10),t.completedAt.slice(0,10)));
+  const avg=ct.length>0?(ct.reduce((a,b)=>a+b,0)/ct.length).toFixed(1):'–';
+
+  const KPIs=[
+    {label:'Tổng task',val:all.length,color:'#3b82f6',icon:'📋'},
+    {label:'Hoàn thành',val:done.length,color:'#22c55e',icon:'✅'},
+    {label:'Đang làm',val:active.length,color:'#f59e0b',icon:'⏳'},
+    {label:'TB hoàn thành',val:avg+'d',color:'#8b5cf6',icon:'⏱'},
+    {label:'Pomodoro',val:all.reduce((s,t)=>s+(t.pomodoroCount||0),0),color:'#ef4444',icon:'🍅'},
+  ];
+
+  let html=`<h1 class="view-title">📊 Thống kê</h1><div class="kpi-row">`;
+  KPIs.forEach(k=>{ html+=`<div class="kpi-card" style="border-top:3px solid ${k.color}"><div class="kpi-val" style="color:${k.color}">${k.val}</div><div class="kpi-label">${k.icon} ${k.label}</div></div>`; });
+  html+=`</div>`;
+
+  // Chart
+  html+=`<div class="card"><h3 class="card-title">7 ngày gần nhất</h3><div class="bar-chart">`;
+  daily.forEach(d=>{
+    const h=mx>0?(d.total/mx)*90:0;
+    const fh=d.total>0?(d.done/d.total)*100:0;
+    html+=`<div class="bar-col"><div style="font-size:10px;color:#8896ab;font-weight:600">${d.done}/${d.total}</div><div style="width:100%;height:90px;display:flex;flex-direction:column;justify-content:flex-end"><div class="bar-outer" style="height:${h}px;background:rgba(30,41,59,0.08)"><div class="bar-inner" style="height:${fh}%;background:#22c55e"></div></div></div><div style="font-size:10px;color:#94a3b8">${fmtDate(d.date)}</div></div>`;
+  });
+  html+=`</div></div>`;
+
+  // Tags
+  const tagEntries=Object.entries(tagMap);
+  if(tagEntries.length>0){
+    html+=`<div class="card"><h3 class="card-title">Theo nhãn</h3>`;
+    tagEntries.forEach(([tag,v])=>{
+      const p=v.total>0?(v.done/v.total)*100:0;
+      html+=`<div class="tag-progress"><span style="font-size:12px;font-weight:700;width:90px">#${esc(tag)}</span><div class="tag-bar"><div class="tag-fill" style="width:${p}%"></div></div><span style="font-size:11px;color:#8896ab;width:50px;text-align:right">${v.done}/${v.total}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  return html;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings(){
+  let html=`<div class="settings-wrap"><h1 class="view-title">⚙ Cài đặt</h1>
+    <div class="card"><h3 class="card-title">Pomodoro (phút)</h3><div style="display:flex;gap:16px">
+      <label class="field-label">Làm việc<input type="number" class="num-input" value="${state.pomodoroSettings.work}" min="1" max="90" onchange="state.pomodoroSettings.work=+this.value;resetPomo();saveState()"></label>
+      <label class="field-label">Nghỉ<input type="number" class="num-input" value="${state.pomodoroSettings.break}" min="1" max="30" onchange="state.pomodoroSettings.break=+this.value;saveState()"></label>
+    </div></div>
+    <div class="card"><h3 class="card-title">Nhãn</h3><div style="margin-bottom:10px">`;
+  state.tags.forEach(t=>{ html+=`<span class="tag-manage">#${esc(t)}<button class="tag-x" onclick="removeTag('${esc(t)}')">×</button></span>`; });
+  html+=`</div><input class="text-input" placeholder="Thêm tag..." onkeydown="handleAddTag(event)"></div>
+    <div class="card"><h3 class="card-title">Dữ liệu</h3><div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-primary" onclick="exportJSON()">📥 Export JSON</button>
+      <button class="btn-ghost" onclick="document.getElementById('importFile').click()">📤 Import JSON</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+    </div><p style="font-size:11px;color:#94a3b8;margin-top:8px">Import sẽ ghi đè toàn bộ dữ liệu.</p></div>
+    <div class="card"><h3 class="card-title">Dọn dẹp</h3>
+      <button class="btn-ghost" style="border-color:#ef4444;color:#ef4444" onclick="if(confirm('Xóa tất cả task đã hoàn thành?')){state.tasks=state.tasks.filter(t=>t.status!=='done');render();}">🗑 Xóa task đã xong</button>
+    </div></div>`;
+  return html;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function switchTab(id){ currentTab=id; render(); }
+function toggleExpand(id){ expandedTask=expandedTask===id?null:id; render(); }
+function toggleHistory(date){ openHistory=openHistory===date?null:date; render(); }
+
+function handleQuick(e){
+  if(e.key!=='Enter') return;
+  const v=e.target.value.trim(); if(!v) return;
+  const tagRx=/#(\S+)/g; const tags=[]; let m;
+  while((m=tagRx.exec(v))!==null) tags.push(m[1]);
+  let title=v.replace(tagRx,'').trim();
+  if(v.startsWith('.')){
+    title=title.replace(/^\./,'').trim();
+    if(title) addDailyTask(title);
+  } else {
+    if(title) addTask({title,tags,isImportant:true,isUrgent:false,showOnMatrix:true});
+  }
+  e.target.value=''; render();
+}
+
+function handleDailyAdd(e){
+  if(e.key!=='Enter') return;
+  const v=e.target.value.trim(); if(!v) return;
+  addDailyTask(v); e.target.value=''; render();
+}
+
+function addTask(t){
+  state.tasks.push({
+    id:uid(), title:t.title, description:t.description||'',
+    isImportant:t.isImportant??true, isUrgent:t.isUrgent??false,
+    showOnMatrix:t.showOnMatrix??true,
+    tags:t.tags||[], deadline:t.deadline||null,
+    status:'active', createdAt:new Date().toISOString(), completedAt:null,
+    pomodoroCount:0, subtasks:t.subtasks||[],
+  });
+  saveState();
+}
+
+function completeTask(id){
+  const t=state.tasks.find(x=>x.id===id);
+  if(t){ t.status='done'; t.completedAt=new Date().toISOString(); }
+  saveState(); render();
+}
+
+function deleteTask(id){
+  if(!confirm('Xóa task này?')) return;
+  state.tasks=state.tasks.filter(t=>t.id!==id);
+  saveState(); render();
+}
+
+function addToToday(id){
+  const td=todayStr();
+  if(!state.dailyLogs[td]) state.dailyLogs[td]={taskIds:[],completedIds:[],carryOver:[],dailyTasks:[]};
+  if(!state.dailyLogs[td].taskIds.includes(id)) state.dailyLogs[td].taskIds.push(id);
+  saveState(); render();
+}
+
+function toggleMatrixDone(id){
+  const td=todayStr();
+  const log=state.dailyLogs[td];
+  if(!log) return;
+  if(log.completedIds.includes(id)){
+    log.completedIds=log.completedIds.filter(x=>x!==id);
+    const t=state.tasks.find(x=>x.id===id); if(t){ t.status='active'; t.completedAt=null; }
+  } else {
+    log.completedIds.push(id);
+    const t=state.tasks.find(x=>x.id===id); if(t){ t.status='done'; t.completedAt=new Date().toISOString(); }
+  }
+  saveState(); render();
+}
+
+function addDailyTask(title){
+  const td=todayStr();
+  if(!state.dailyLogs[td]) state.dailyLogs[td]={taskIds:[],completedIds:[],carryOver:[],dailyTasks:[]};
+  if(!state.dailyLogs[td].dailyTasks) state.dailyLogs[td].dailyTasks=[];
+  state.dailyLogs[td].dailyTasks.push({id:uid(),title,done:false,completedAt:null});
+  saveState();
+}
+
+function toggleDailyTask(date,id){
+  const log=state.dailyLogs[date]; if(!log) return;
+  const t=(log.dailyTasks||[]).find(x=>x.id===id);
+  if(t){ t.done=!t.done; t.completedAt=t.done?new Date().toISOString():null; }
+  saveState(); render();
+}
+
+function toggleSub(taskId,subId){
+  const t=state.tasks.find(x=>x.id===taskId); if(!t) return;
+  const s=t.subtasks.find(x=>x.id===subId); if(s) s.done=!s.done;
+  saveState(); render();
+}
+
+function removeTag(tag){ state.tags=state.tags.filter(t=>t!==tag); saveState(); render(); }
+function handleAddTag(e){
+  if(e.key!=='Enter') return;
+  const v=e.target.value.trim(); if(!v||state.tags.includes(v)) return;
+  state.tags.push(v); e.target.value=''; saveState(); render();
+}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`eisenhower-${todayStr()}.json`; a.click(); URL.revokeObjectURL(a.href);
+}
+function importJSON(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{ try { state=JSON.parse(ev.target.result); saveState(); render(); } catch{ alert('JSON không hợp lệ'); }};
+  r.readAsText(f);
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(taskId){
+  const t=taskId?state.tasks.find(x=>x.id===taskId):null;
+  const tags=state.tags;
+  const f = t ? {...t, subtasks:[...t.subtasks.map(s=>({...s}))]} : {title:'',description:'',isImportant:true,isUrgent:false,showOnMatrix:true,tags:[],deadline:'',subtasks:[]};
+
+  function renderModal(){
+    const qk=f.isImportant?(f.isUrgent?'q1':'q2'):(f.isUrgent?'q3':'q4');
+    document.getElementById('modalContent').innerHTML=`
+      <div class="modal-head"><h2 class="modal-title">${t?'Sửa Task':'Thêm Task'}</h2><button class="modal-close" onclick="closeModal()">×</button></div>
+      <div class="f-group"><label class="f-label">Tên task *</label><input class="text-input" id="mTitle" value="${esc(f.title)}" placeholder="Task chính..."></div>
+      <div class="f-group"><label class="f-label">Mô tả</label><textarea class="text-input" id="mDesc" placeholder="Chi tiết...">${esc(f.description)}</textarea></div>
+      <div class="f-group"><label class="f-label">Loại task</label><div style="display:flex;gap:8px">
+        <button class="toggle-chip" id="mMatrix" style="background:${f.showOnMatrix?'#1a2332':'#f1f5f9'};color:${f.showOnMatrix?'#fff':'#64748b'}" onclick="f.showOnMatrix=true;renderModal()">🎯 Chiến lược</button>
+        <button class="toggle-chip" style="background:${!f.showOnMatrix?'#1a2332':'#f1f5f9'};color:${!f.showOnMatrix?'#fff':'#64748b'}" onclick="f.showOnMatrix=false;renderModal()">📝 Việc nhỏ</button>
+      </div></div>
+      ${f.showOnMatrix?`<div class="f-group"><label class="f-label">Phân loại</label><div style="display:flex;gap:8px">
+        <button class="toggle-chip" style="background:${f.isImportant?'#3b82f6':'#f1f5f9'};color:${f.isImportant?'#fff':'#64748b'}" onclick="f.isImportant=!f.isImportant;renderModal()">${f.isImportant?'⭐ Quan trọng':'☆ Không QT'}</button>
+        <button class="toggle-chip" style="background:${f.isUrgent?'#ef4444':'#f1f5f9'};color:${f.isUrgent?'#fff':'#64748b'}" onclick="f.isUrgent=!f.isUrgent;renderModal()">${f.isUrgent?'🔥 Gấp':'○ Không gấp'}</button>
+      </div><div style="margin-top:4px;font-size:12px;color:${Q[qk].accent};font-weight:700">→ ${Q[qk].icon} ${Q[qk].label}</div></div>`:''}
+      <div class="f-group"><label class="f-label">Deadline</label><input type="date" class="text-input" id="mDeadline" value="${f.deadline||''}" style="width:180px"></div>
+      <div class="f-group"><label class="f-label">Tags</label><div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${tags.map(tg=>`<button class="toggle-chip" style="font-size:11px;padding:3px 10px;background:${f.tags.includes(tg)?'#3b82f6':'#f1f5f9'};color:${f.tags.includes(tg)?'#fff':'#64748b'}" onclick="toggleModalTag('${esc(tg)}')">#${esc(tg)}</button>`).join('')}
+      </div></div>
+      <div class="f-group"><label class="f-label">Sub-tasks</label>
+        <div id="mSubList">${f.subtasks.map((s,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f8fafc;border-radius:6px;margin-bottom:3px"><span style="font-size:11px;color:#94a3b8;width:18px">${i+1}.</span><span style="flex:1;font-size:12px">${esc(s.title)}</span><button style="border:none;background:none;cursor:pointer;color:#94a3b8;font-size:14px" onclick="removeModalSub('${s.id}')">×</button></div>`).join('')}</div>
+        <div style="display:flex;gap:6px;margin-top:6px"><input class="text-input" id="mNewSub" style="flex:1" placeholder="+ Thêm sub-task..." onkeydown="if(event.key==='Enter')addModalSub()"><button class="btn-primary" style="padding:6px 14px" onclick="addModalSub()">+</button></div>
+      </div>
+      <div class="modal-footer"><button class="btn-ghost" onclick="closeModal()">Hủy</button><button class="btn-primary" style="opacity:${f.title.trim()?1:0.4}" onclick="saveModal()">${t?'Cập nhật':'Thêm task'}</button></div>`;
+  }
+
+  // Expose modal helpers to global scope
+  window._modalForm = f;
+  window._modalTask = t;
+  window.toggleModalTag = (tag) => { const i=f.tags.indexOf(tag); if(i>=0)f.tags.splice(i,1);else f.tags.push(tag); renderModal(); };
+  window.addModalSub = () => { const el=document.getElementById('mNewSub'); const v=el.value.trim(); if(!v)return; f.subtasks.push({id:uid(),title:v,done:false}); el.value=''; renderModal(); };
+  window.removeModalSub = (id) => { f.subtasks=f.subtasks.filter(s=>s.id!==id); renderModal(); };
+  window.saveModal = () => {
+    const title=document.getElementById('mTitle').value.trim(); if(!title) return;
+    f.title=title;
+    f.description=document.getElementById('mDesc').value;
+    f.deadline=document.getElementById('mDeadline').value||null;
+    if(t){
+      Object.assign(t,{title:f.title,description:f.description,isImportant:f.isImportant,isUrgent:f.isUrgent,showOnMatrix:f.showOnMatrix,tags:[...f.tags],deadline:f.deadline,subtasks:[...f.subtasks]});
+    } else {
+      addTask(f);
+    }
+    closeModal(); saveState(); render();
+  };
+
+  renderModal();
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('mTitle')?.focus(),100);
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+document.getElementById('modalOverlay').addEventListener('click',closeModal);
+
+// ============================================================
+// INIT
+// ============================================================
+loadState();
+pomoLeft = state.pomodoroSettings.work * 60;
+rollover();
+render();
+</script>
+</body>
+</html>
